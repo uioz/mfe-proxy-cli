@@ -2,7 +2,7 @@
   "name": "mfe-proxy-cli",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,10 +11,18 @@
     "url": "git+https://github.com/uioz/mfe-proxy-cli.git"
   },
   "keywords": [],
-  "author": "",
+  "author": {
+    "name": "uioz",
+    "email": "hzxbpld@163.com"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/uioz/mfe-proxy-cli/issues"
   },
-  "homepage": "https://github.com/uioz/mfe-proxy-cli#readme"
+  "homepage": "https://github.com/uioz/mfe-proxy-cli#readme",
+  "devDependencies": {
+    "eslint": "^7.24.0",
+    "eslint-config-prettier": "^8.2.0",
+    "prettier": "^2.2.1"
+  }
 }
