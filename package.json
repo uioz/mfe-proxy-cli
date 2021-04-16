@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "bin": "bin/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -21,17 +22,11 @@
     "url": "https://github.com/uioz/mfe-proxy-cli/issues"
   },
   "homepage": "https://github.com/uioz/mfe-proxy-cli#readme",
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
   "devDependencies": {
     "eslint": "^7.24.0",
     "eslint-config-prettier": "^8.2.0",
-    "husky": "^6.0.0",
-    "lint-staged": "^10.5.4",
-    "prettier": "^2.2.1"
+    "prettier": "^2.2.1",
+    "husky": "^6.0.0"
   },
   "dependencies": {
     "commander": "^7.2.0",
