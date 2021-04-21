@@ -1,10 +1,15 @@
 'use strict';
 const CWD = process.cwd();
 const execa = require('execa');
-const {join, parse} = require('path');
+const path = require('path');
 const {writeFile} = require('fs').promises;
 const resolvePkg = require('resolve-pkg');
-const {CONFIG_FILE_NAME, ROUTE_FILE_NAME} = require('./common');
+const {
+  CONFIG_FILE_NAME,
+  ROUTE_FILE_NAME,
+  DEFAULT_OUTPUT_DIR,
+  DEFAULT_STATIC_DIR,
+} = require('./common');
 
 class Downloader {
   constructor(packageName, registry) {
@@ -52,36 +57,42 @@ class ManifestGenerator {
 
   scanPackages() {
     for (const packageName of this.packageNames) {
-      // TODO: resolvePkg 即使对不存在的文件也不会报错, 例如 @example/app1/index.js, 除非它完全不存在
-      // 由于 require.resolve 完全无法使用, 所以只解析模块的地址, 然后扫描文件系统, 在进行读取数据
-      // 目前当作可以正常使用, 后续改为文件系统扫描
-      const {dir, base} = parse(resolvePkg(packageName));
+      const packagePath = path.parse(resolvePkg(packageName));
+
+      let dir = path.relative(
+        CWD,
+        path.join(packagePath.dir, packagePath.base)
+      );
+
+      if (path.sep === '\\') {
+        dir = dir.replace(path.sep, '/');
+      }
 
       const applicationInfo = {
         name: packageName,
-        dir: join(dir, base),
-        routePath: undefined,
-        outputDir: join(dir, base, 'dist'),
-        staticDir: join(dir, base, 'dist/static'),
+        dir,
+        routePath: path.posix.join(dir, ROUTE_FILE_NAME),
+        outputDir: path.posix.join(dir, DEFAULT_OUTPUT_DIR),
+        staticDir: path.posix.join(dir, DEFAULT_STATIC_DIR),
       };
 
+      const mfeConfigPath = `${packageName}/${CONFIG_FILE_NAME}`;
+
       try {
-        const mfeConfig = require(`${packageName}/${CONFIG_FILE_NAME}`);
+        const mfeConfig = require(mfeConfigPath);
 
         if (mfeConfig.routeConfigPath) {
-          applicationInfo.routePath = join(
+          applicationInfo.routePath = path.posix.join(
             applicationInfo.dir,
             mfeConfig.routeConfigPath
           );
-        } else {
-          applicationInfo.routePath = join(
-            applicationInfo.dir,
-            ROUTE_FILE_NAME
-          );
         }
       } catch (error) {
-        // TODO: will fix later
-        applicationInfo.routePath = join(applicationInfo.dir, ROUTE_FILE_NAME);
+        console.log(
+          `load mfeconfig ${mfeConfigPath} failed, use ${JSON.stringify(
+            applicationInfo
+          )} instead`
+        );
       }
 
       this.application.push(applicationInfo);
@@ -118,10 +129,10 @@ module.exports = async function createCommandHandler(commands, options) {
   console.log('npm install finish!');
 
   if (options.manifest) {
-    const path = join(CWD, `${options.manifestName}.json`);
+    const manifestPath = path.join(CWD, `${options.manifestName}.json`);
 
-    console.log(`manifest will auto generate at ${path}`);
+    console.log(`manifest will auto generate at ${manifestPath}`);
 
-    await new ManifestGenerator(path, commands).generate();
+    await new ManifestGenerator(manifestPath, commands).generate();
   }
 };

@@ -12,6 +12,10 @@
     "type": "git",
     "url": "git+https://github.com/uioz/mfe-proxy-cli.git"
   },
+  "files": [
+    "src",
+    "bin"
+  ],
   "keywords": [],
   "author": {
     "name": "uioz",
