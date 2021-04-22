@@ -129,7 +129,7 @@ module.exports = async function createCommandHandler(commands, options) {
   console.log('npm install finish!');
 
   if (options.manifest) {
-    const manifestPath = path.join(CWD, `${options.manifestName}.json`);
+    const manifestPath = path.join(CWD, `${options.manifestName}`);
 
     console.log(`manifest will auto generate at ${manifestPath}`);
 
