@@ -2,7 +2,7 @@
 const CWD = process.cwd();
 const execa = require('execa');
 const path = require('path');
-const {writeFile} = require('fs').promises;
+const { writeFile } = require('fs').promises;
 const resolvePkg = require('resolve-pkg');
 const {
   CONFIG_FILE_NAME,

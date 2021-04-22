@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 
-const {program} = require('commander');
-const {MANIFEST_FILE_NAME} = require('../src/common');
+const { program } = require('commander');
+const { MANIFEST_FILE_NAME } = require('../src/common');
 
 program
   .version(
