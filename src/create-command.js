@@ -50,6 +50,26 @@ class Downloader {
   }
 }
 
+function getMfeConfig(packagePath, packageName) {
+  packagePath = path.join(packagePath, CONFIG_FILE_NAME);
+  try {
+    const mfeConfig = require(packagePath);
+
+    if (typeof mfeConfig === 'object') {
+      return mfeConfig;
+    }
+    console.error(
+      `Wrong format with the ${packageName}'s ${CONFIG_FILE_NAME}.`
+    );
+    return false;
+  } catch (error) {
+    console.warn(
+      `Skipping the package of ${packageName} cuz it doesn't have a ${CONFIG_FILE_NAME} included.`
+    );
+    return false;
+  }
+}
+
 class ManifestGenerator {
   constructor(path, packageNames, context) {
     this.context = context;
@@ -66,16 +86,24 @@ class ManifestGenerator {
 
   scanPackages() {
     for (const packageName of this.packageNames) {
-      const packagePath = path.parse(
+      const parsedPackageMeta = path.parse(
         resolvePkg(packageName, {
           cwd: this.context,
         })
       );
 
-      let dir = path.relative(
-        this.context,
-        path.join(packagePath.dir, packagePath.base)
+      const packagePath = path.join(
+        parsedPackageMeta.dir,
+        parsedPackageMeta.base
       );
+
+      const mfeConfig = getMfeConfig(packagePath, packageName);
+
+      if (!mfeConfig) {
+        continue;
+      }
+
+      let dir = path.relative(this.context, packagePath);
 
       if (path.sep === '\\') {
         dir = dir.replace(path.sep, '/');
@@ -89,22 +117,10 @@ class ManifestGenerator {
         staticDir: path.posix.join(dir, DEFAULT_STATIC_DIR),
       };
 
-      const mfeConfigPath = `${packageName}/${CONFIG_FILE_NAME}`;
-
-      try {
-        const mfeConfig = require(mfeConfigPath);
-
-        if (mfeConfig.routeConfigPath) {
-          applicationInfo.routePath = path.posix.join(
-            applicationInfo.dir,
-            mfeConfig.routeConfigPath
-          );
-        }
-      } catch (error) {
-        console.log(
-          `load mfeconfig ${mfeConfigPath} failed, use ${JSON.stringify(
-            applicationInfo
-          )} instead`
+      if (mfeConfig.routeConfigPath) {
+        applicationInfo.routePath = path.posix.join(
+          applicationInfo.dir,
+          mfeConfig.routeConfigPath
         );
       }
 

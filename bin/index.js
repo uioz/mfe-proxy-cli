@@ -42,18 +42,14 @@ eg. [@vue/cli]<http://localhost:8080>`,
   )
   .option(
     '-n, --to-npm <anyoption...>',
-    'anything that npm install command support'
+    'anything that npm install command supports'
   )
   .option(
     '-m, --manifest-name <name>',
     `Use more specific name instead of '${MANIFEST_FILE_NAME}' by default`,
     MANIFEST_FILE_NAME
   )
-  .option(
-    '--no-manifest',
-    `Don't genterator ${MANIFEST_FILE_NAME} for server when finish`,
-    false
-  )
+  .option('--no-manifest', `Don't genterator ${MANIFEST_FILE_NAME}`, false)
   .action(require('../src/create-command'));
 
 program.program.parse(process.argv);
