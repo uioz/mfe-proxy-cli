@@ -2,7 +2,7 @@
 const CWD = process.cwd();
 const execa = require('execa');
 const path = require('path');
-const { writeFile } = require('fs').promises;
+const { writeFile, mkdir } = require('fs').promises;
 const resolvePkg = require('resolve-pkg');
 const {
   CONFIG_FILE_NAME,
@@ -12,38 +12,47 @@ const {
 } = require('./common');
 
 class Downloader {
-  constructor(packageName, registry) {
+  /**
+   *
+   * @param {string} packageName
+   * @param {string} registry
+   * @param {string} context
+   * @param {Array<string>} args
+   */
+  constructor(packageName, registry, context, args = []) {
     this.packageName = packageName;
-    this.registry = registry;
+    this.context = context;
+
+    const registryFlag = '--registry';
+
+    if (registry) {
+      // ['options1','--registry','from --to-npm options']
+      // -> ['options1','--registry','into specific registry in [packageName](registry)']
+      const index = args.indexOf(registryFlag);
+
+      if (index !== -1) {
+        args.splice(index, 0, registry);
+      } else {
+        args.push(registryFlag, registry);
+      }
+    }
+
+    this.args = args;
   }
 
   async download() {
-    const hasRegistryBeforeRequest = 'npm_config_registry' in process.env;
-    const registryBeforeRequest = process.env.npm_config_registry;
-
-    if (this.registry) {
-      process.env.npm_config_registry = this.registry;
-    }
-
-    try {
-      await execa('npm', ['install', this.packageName], {
-        cwd: CWD,
-        stderr: process.stderr,
-        stdin: process.stdin,
-        stdout: process.stdout,
-      });
-    } finally {
-      if (hasRegistryBeforeRequest) {
-        process.env.npm_config_registry = registryBeforeRequest;
-      } else {
-        delete process.env.npm_config_registry;
-      }
-    }
+    await execa('npm', ['install', this.packageName, ...this.args], {
+      cwd: this.context,
+      stderr: process.stderr,
+      stdin: process.stdin,
+      stdout: process.stdout,
+    });
   }
 }
 
 class ManifestGenerator {
-  constructor(path, packageNames) {
+  constructor(path, packageNames, context) {
+    this.context = context;
     this.path = path;
     this.packageNames = packageNames;
     this.application = [];
@@ -57,10 +66,14 @@ class ManifestGenerator {
 
   scanPackages() {
     for (const packageName of this.packageNames) {
-      const packagePath = path.parse(resolvePkg(packageName));
+      const packagePath = path.parse(
+        resolvePkg(packageName, {
+          cwd: this.context,
+        })
+      );
 
       let dir = path.relative(
-        CWD,
+        this.context,
         path.join(packagePath.dir, packagePath.base)
       );
 
@@ -107,32 +120,75 @@ class ManifestGenerator {
 
 /**
  *
- * @param {any} commands
+ * @param {Array<string>} packageNames
+ * @returns
+ */
+function parsePackageName(packageNames) {
+  const pattern = /^\[(.+)\]<(.+)>/;
+
+  return packageNames.map((packageName) => {
+    const result = packageName.match(pattern);
+
+    if (result) {
+      return {
+        packageName: result[1],
+        registry: result[2],
+      };
+    }
+    return {
+      packageName: packageName,
+      registry: null,
+    };
+  });
+}
+
+async function makeDirAsPackage(context) {
+  await execa('npm', ['init', '-y'], {
+    cwd: context,
+    stderr: process.stderr,
+    stdin: process.stdin,
+    stdout: process.stdout,
+  });
+}
+
+/**
+ * @param {string} folderName
+ * @param {Array<string>} commands
  * @param {any} options
  */
-module.exports = async function createCommandHandler(commands, options) {
-  console.log('npm install start!');
+module.exports = async function createCommandHandler(
+  folderName,
+  commands,
+  options
+) {
+  const context = path.join(CWD, folderName);
 
-  const registry = options?.registry;
+  await mkdir(context);
 
-  for (const command of commands) {
-    // TODO: use regexp instead after
-    const [packageName, specificRegistry] = command.split('=');
+  await makeDirAsPackage(context);
+
+  const packageMeta = parsePackageName(commands);
+
+  for (const { packageName, registry } of packageMeta) {
     const downloader = new Downloader(
       packageName,
-      specificRegistry ?? registry
+      registry,
+      context,
+      options.toNpm
     );
 
     await downloader.download();
   }
 
-  console.log('npm install finish!');
-
   if (options.manifest) {
-    const manifestPath = path.join(CWD, `${options.manifestName}`);
+    const manifestPath = path.join(context, `${options.manifestName}`);
 
     console.log(`manifest will auto generate at ${manifestPath}`);
 
-    await new ManifestGenerator(manifestPath, commands).generate();
+    await new ManifestGenerator(
+      manifestPath,
+      packageMeta.map((item) => item.packageName),
+      context
+    ).generate();
   }
 };
