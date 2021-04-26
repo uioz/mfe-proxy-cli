@@ -4,11 +4,13 @@ const execa = require('execa');
 const path = require('path');
 const { writeFile, mkdir } = require('fs').promises;
 const resolvePkg = require('resolve-pkg');
+const { joinPath, normalizePath } = require('./utils');
 const {
   CONFIG_FILE_NAME,
   ROUTE_FILE_NAME,
   DEFAULT_OUTPUT_DIR,
   DEFAULT_STATIC_DIR,
+  DEFAULT_PUBLIC_PATH,
 } = require('./common');
 
 class Downloader {
@@ -85,6 +87,8 @@ class ManifestGenerator {
   }
 
   scanPackages() {
+    const apps = [];
+
     for (const packageName of this.packageNames) {
       const parsedPackageMeta = path.parse(
         resolvePkg(packageName, {
@@ -112,24 +116,48 @@ class ManifestGenerator {
       const applicationInfo = {
         name: packageName,
         dir,
-        routePath: path.posix.join(dir, ROUTE_FILE_NAME),
-        outputDir: path.posix.join(dir, DEFAULT_OUTPUT_DIR),
-        staticDir: path.posix.join(dir, DEFAULT_STATIC_DIR),
       };
 
-      if (mfeConfig.routeConfigPath) {
-        applicationInfo.routePath = path.posix.join(
-          applicationInfo.dir,
-          mfeConfig.routeConfigPath
-        );
+      apps.push([mfeConfig, applicationInfo]);
+    }
+
+    return apps;
+  }
+
+  mergeConfig(appsMeta) {
+    for (const [mfeConfig, applicationInfo] of appsMeta) {
+      // handle publicPath
+      let publicPath = normalizePath(
+        mfeConfig.static?.publicPath ?? DEFAULT_PUBLIC_PATH
+      );
+
+      if (mfeConfig.static?.staticPrefix ?? true) {
+        publicPath = joinPath(publicPath, applicationInfo.name);
       }
 
-      this.application.push(applicationInfo);
+      this.application.push(
+        Object.assign({}, applicationInfo, {
+          routePath: path.posix.join(
+            applicationInfo.dir,
+            mfeConfig.routePath ?? ROUTE_FILE_NAME
+          ),
+          outputDir: path.posix.join(
+            applicationInfo.dir,
+            mfeConfig.outputDir ?? DEFAULT_OUTPUT_DIR
+          ),
+          staticDir: path.posix.join(
+            applicationInfo.dir,
+            mfeConfig.static?.outputDir ?? DEFAULT_STATIC_DIR
+          ),
+          publicPath,
+        })
+      );
     }
   }
 
   generate() {
-    this.scanPackages();
+    this.mergeConfig(this.scanPackages());
+
     return writeFile(this.path, this.template(this.application));
   }
 }
