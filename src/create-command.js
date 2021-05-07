@@ -127,31 +127,49 @@ class ManifestGenerator {
   mergeConfig(appsMeta) {
     for (const [mfeConfig, applicationInfo] of appsMeta) {
       // handle publicPath
-      let publicPath = normalizePath(
-        mfeConfig.static?.publicPath ?? DEFAULT_PUBLIC_PATH
-      );
+      let publicPath;
 
-      if (mfeConfig.static?.staticPrefix ?? true) {
-        publicPath = joinPath(publicPath, applicationInfo.name);
+      // set publicPath or changing staticPrefix
+      if (
+        mfeConfig.static?.publicPath ||
+        mfeConfig.static?.staticPrefix === false
+      ) {
+        publicPath = true;
       }
 
-      this.application.push(
-        Object.assign({}, applicationInfo, {
-          routePath: path.posix.join(
-            applicationInfo.dir,
-            mfeConfig.routePath ?? ROUTE_FILE_NAME
-          ),
-          outputDir: path.posix.join(
-            applicationInfo.dir,
-            mfeConfig.outputDir ?? DEFAULT_OUTPUT_DIR
-          ),
-          staticDir: path.posix.join(
-            applicationInfo.dir,
-            mfeConfig.static?.outputDir ?? DEFAULT_STATIC_DIR
-          ),
-          publicPath,
-        })
-      );
+      const meta = {
+        routePath: path.posix.join(
+          applicationInfo.dir,
+          mfeConfig.routePath ?? ROUTE_FILE_NAME
+        ),
+        outputDir: path.posix.join(
+          applicationInfo.dir,
+          mfeConfig.outputDir ?? DEFAULT_OUTPUT_DIR
+        ),
+        staticDir: path.posix.join(
+          applicationInfo.dir,
+          mfeConfig.static?.outputDir ?? DEFAULT_STATIC_DIR
+        ),
+      };
+
+      if (meta.outputDir !== meta.staticDir) {
+        publicPath = true;
+      }
+
+      // true -> publicPath
+      if (publicPath) {
+        publicPath = normalizePath(
+          mfeConfig.static?.publicPath ?? DEFAULT_PUBLIC_PATH
+        );
+
+        if (mfeConfig.static?.staticPrefix ?? true) {
+          publicPath = joinPath(publicPath, applicationInfo.name);
+        }
+
+        meta.publicPath = publicPath;
+      }
+
+      this.application.push(Object.assign({}, applicationInfo, meta));
     }
   }
 
