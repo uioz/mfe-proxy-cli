@@ -14,9 +14,9 @@
 
 ### alpha
 
-1. `npx standard-version --pre-release alpha --no-verify`
+1. `npx standard-version --prerelease alpha --no-verify`
 2. `git push --follow-tags origin dev`
-3. `npm publish --tag next`
+3. `npm publish --tag alpha`
 
 ## in master
 
