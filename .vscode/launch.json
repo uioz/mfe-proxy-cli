@@ -12,12 +12,12 @@
       "args": [
         "create",
         "test",
-        "package1",
-        "package2",
+        "@ove/legacy",
         "-n",
         "--registry",
         "http://localhost:8080"
       ],
+      "stopOnEntry": true,
       "program": "${workspaceFolder}\\bin\\index.js"
     }
   ]
