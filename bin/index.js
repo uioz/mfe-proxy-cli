@@ -32,17 +32,17 @@ program
 program
   .command('create <projectName> <packageName...>')
   .description(
-    `packageName support all that npm install command support.
+    `packageName supports all kinds of commands that npm install support..
 packageName also support [packageName]<registry> to specify registry of each package
 eg. [@vue/cli]<http://localhost:8080>`,
     {
       projectName: 'a folder',
-      packageName: 'package name that npm install will use it.',
+      packageName: 'package name that npm install command will use it.',
     }
   )
   .option(
     '-n, --to-npm <anyoption...>',
-    'anything that npm install command supports'
+    'any option that npm install command supports'
   )
   .option(
     '-m, --manifest-name <name>',

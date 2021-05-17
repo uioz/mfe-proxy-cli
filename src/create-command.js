@@ -105,15 +105,15 @@ class ManifestGenerator {
         continue;
       }
 
-      let dir = path.relative(this.context, packagePath);
+      let relativePath = path.relative(this.context, packagePath);
 
       if (path.sep === '\\') {
-        dir = dir.replace(path.sep, '/');
+        relativePath = relativePath.split(path.sep).join('/');
       }
 
       const applicationInfo = {
         name: packageName,
-        dir,
+        dir: relativePath,
       };
 
       apps.push([mfeConfig, applicationInfo]);
