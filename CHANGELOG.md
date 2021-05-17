@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1-alpha.1](https://github.com/uioz/mfe-proxy-cli/compare/v1.0.1-alpha.0...v1.0.1-alpha.1) (2021-05-17)
+
+
+### Bug Fixes
+
+* [#29](https://github.com/uioz/mfe-proxy-cli/issues/29) ([28d8556](https://github.com/uioz/mfe-proxy-cli/commit/28d85564ec89ee642b479838a6ec7e4d87dbe5a9))
+
 ### [1.0.1-alpha.0](https://github.com/uioz/mfe-proxy-cli/compare/v1.0.0...v1.0.1-alpha.0) (2021-05-10)
 
 ## 1.0.0 (2021-05-10)
