@@ -10,45 +10,7 @@ const {
   DEFAULT_OUTPUT_DIR,
   DEFAULT_STATIC_DIR,
 } = require('./common');
-
-class Downloader {
-  /**
-   *
-   * @param {string} packageName
-   * @param {string} registry
-   * @param {string} context
-   * @param {Array<string>} args
-   */
-  constructor(packageName, registry, context, args = []) {
-    this.packageName = packageName;
-    this.context = context;
-
-    const registryFlag = '--registry';
-
-    if (registry) {
-      // ['options1','--registry','from --to-npm options']
-      // -> ['options1','--registry','into specific registry in [packageName](registry)']
-      const index = args.indexOf(registryFlag);
-
-      if (index !== -1) {
-        args.splice(index, 0, registry);
-      } else {
-        args.push(registryFlag, registry);
-      }
-    }
-
-    this.args = args;
-  }
-
-  async download() {
-    await execa('npm', ['install', this.packageName, ...this.args], {
-      cwd: this.context,
-      stderr: process.stderr,
-      stdin: process.stdin,
-      stdout: process.stdout,
-    });
-  }
-}
+const { Installer, ServerInstaller } = require('./npm-wrapper');
 
 function getMfeConfig(packagePath, packageName) {
   packagePath = path.join(packagePath, CONFIG_FILE_NAME);
@@ -202,14 +164,14 @@ module.exports = async function createCommandHandler(
   const packageMeta = parsePackageName(commands);
 
   for (const { packageName, registry } of packageMeta) {
-    const downloader = new Downloader(
+    const installer = new Installer(
       packageName,
-      registry,
       context,
+      registry,
       options.toNpm
     );
 
-    await downloader.download();
+    await installer.download();
   }
 
   if (options.manifest) {
@@ -222,5 +184,21 @@ module.exports = async function createCommandHandler(
       packageMeta.map((item) => item.packageName),
       context
     ).generate();
+  }
+
+  if (options.serve) {
+    const installer = new ServerInstaller('mfe-proxy-server', context);
+
+    await installer.download({
+      MFE_SERVER_PORT: options.port,
+      MFE_SERVER_HOST: options.host,
+      MFE_SERVER_MODE: options.mode,
+    });
+
+    execa('npm', ['run serve'], {
+      cwd: context,
+      detached: true,
+      stdio: 'ignore',
+    });
   }
 };
