@@ -189,11 +189,19 @@ module.exports = async function createCommandHandler(
   if (options.serve) {
     const installer = new ServerInstaller('mfe-proxy-server', context);
 
-    await installer.download({
-      MFE_SERVER_PORT: options.port,
-      MFE_SERVER_HOST: options.host,
-      MFE_SERVER_MODE: options.mode,
-    });
+    const env = {};
+
+    if (options.port) {
+      env.MFE_SERVER_PORT = options.port;
+    }
+    if (options.host) {
+      env.MFE_SERVER_HOST = options.host;
+    }
+    if (options.mode) {
+      env.MFE_SERVER_MODE = options.mode;
+    }
+
+    await installer.download(env);
 
     execa('npm', ['run serve'], {
       cwd: context,

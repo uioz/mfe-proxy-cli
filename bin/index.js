@@ -55,9 +55,12 @@ eg. [@vue/cli]<http://localhost:8080>`,
     'immediately serving this project use mfe-proxy-server when project was created',
     false
   )
-  .option('-P, --port <port>', 'mfe-proxy-server port', '80')
-  .option('-H, --host <host>', 'mfe-proxy-server host', '127.0.0.1')
-  .option('-M, --mode <mode>', 'development or production', 'production')
+  .option('-P, --port <port>', 'mfe-proxy-server port (80 by default)')
+  .option('-H, --host <host>', 'mfe-proxy-server host (0.0.0.0 by default)')
+  .option(
+    '-M, --mode <mode>',
+    'development or production (prooduction by default)'
+  )
   .action(require('../src/create-command'));
 
 program.program.parse(process.argv);
