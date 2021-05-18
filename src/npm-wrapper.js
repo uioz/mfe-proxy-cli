@@ -32,9 +32,7 @@ class Installer {
   async download() {
     await execa('npm', ['install', this.packageName, ...this.args], {
       cwd: this.context,
-      stderr: process.stderr,
-      stdin: process.stdin,
-      stdout: process.stdout,
+      stdio: 'inherit',
     });
   }
 }
@@ -45,9 +43,7 @@ class ServerInstaller extends Installer {
   async download(env) {
     await execa('npm', ['install', this.packageName, ...this.args], {
       cwd: this.context,
-      stderr: process.stderr,
-      stdin: process.stdin,
-      stdout: process.stdout,
+      stdio: 'inherit',
       env,
       extendEnv: false,
     });

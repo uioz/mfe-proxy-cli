@@ -11,6 +11,7 @@ const {
   DEFAULT_STATIC_DIR,
 } = require('./common');
 const { Installer, ServerInstaller } = require('./npm-wrapper');
+const { readPackageJson, writePackageJson, initPackage } = require('./package');
 
 function getMfeConfig(packagePath, packageName) {
   packagePath = path.join(packagePath, CONFIG_FILE_NAME);
@@ -136,15 +137,6 @@ function parsePackageName(packageNames) {
   });
 }
 
-async function makeDirAsPackage(context) {
-  await execa('npm', ['init', '-y'], {
-    cwd: context,
-    stderr: process.stderr,
-    stdin: process.stdin,
-    stdout: process.stdout,
-  });
-}
-
 /**
  * @param {string} folderName
  * @param {Array<string>} commands
@@ -159,7 +151,7 @@ module.exports = async function createCommandHandler(
 
   await mkdir(context);
 
-  await makeDirAsPackage(context);
+  await initPackage(context);
 
   const packageMeta = parsePackageName(commands);
 
@@ -187,6 +179,21 @@ module.exports = async function createCommandHandler(
   }
 
   if (options.serve) {
+    // add serve script to package.json
+    const packageJson = readPackageJson(context);
+    const command = {
+      serve: 'node ./mfe-server.js',
+    };
+
+    if (packageJson.scripts) {
+      Object.assign(packageJson.scripts, command);
+    } else {
+      packageJson.scripts = command;
+    }
+
+    writePackageJson(context, packageJson);
+
+    // install mfe-proxy-server and inject envs to it
     const installer = new ServerInstaller('mfe-proxy-server', context);
 
     const env = {};
@@ -203,10 +210,10 @@ module.exports = async function createCommandHandler(
 
     await installer.download(env);
 
-    execa('npm', ['run serve'], {
+    await execa('npm', ['run', 'serve'], {
       cwd: context,
       detached: true,
-      stdio: 'ignore',
+      stdio: 'inherit',
     });
   }
 };
