@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = async function serverInstallCommandHandler(options) {
   console.log(options);
   throw new Error('');

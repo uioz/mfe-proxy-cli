@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 const { writeFile } = require('fs/promises');
 const execa = require('execa');

@@ -1,4 +1,5 @@
 'use strict';
+
 const CWD = process.cwd();
 const execa = require('execa');
 const path = require('path');
