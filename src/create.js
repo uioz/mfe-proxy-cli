@@ -1,9 +1,8 @@
 'use strict';
 
 const CWD = process.cwd();
-const execa = require('execa');
 const path = require('path');
-const { writeFile, mkdir } = require('fs').promises;
+const { writeFile, mkdir } = require('fs/promises');
 const resolvePkg = require('resolve-pkg');
 const {
   CONFIG_FILE_NAME,
@@ -16,7 +15,9 @@ const {
   readPackageJson,
   writePackageJson,
   initPackage,
+  setupServeScript,
 } = require('./lib/package');
+const server = require('./lib/server');
 
 function getMfeConfig(packagePath, packageName) {
   packagePath = path.join(packagePath, CONFIG_FILE_NAME);
@@ -184,41 +185,13 @@ module.exports = async function createCommandHandler(
   }
 
   if (options.serve) {
-    // add serve script to package.json
-    const packageJson = readPackageJson(context);
-    const command = {
-      serve: 'node ./mfe-server.js',
-    };
+    await writePackageJson(context, setupServeScript(readPackageJson(context)));
 
-    if (packageJson.scripts) {
-      Object.assign(packageJson.scripts, command);
-    } else {
-      packageJson.scripts = command;
-    }
+    await server.install(
+      options,
+      new ServerInstaller('mfe-proxy-server@latest', context)
+    );
 
-    writePackageJson(context, packageJson);
-
-    // install mfe-proxy-server and inject envs to it
-    const installer = new ServerInstaller('mfe-proxy-server', context);
-
-    const env = {};
-
-    if (options.port) {
-      env.MFE_SERVER_PORT = options.port;
-    }
-    if (options.host) {
-      env.MFE_SERVER_HOST = options.host;
-    }
-    if (options.mode) {
-      env.MFE_SERVER_MODE = options.mode;
-    }
-
-    await installer.download(env);
-
-    await execa('npm', ['run', 'serve'], {
-      cwd: context,
-      detached: true,
-      stdio: 'inherit',
-    });
+    await server.run(context);
   }
 };
