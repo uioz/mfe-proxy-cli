@@ -48,9 +48,13 @@ class ManifestGenerator {
   }
 
   template(applications) {
-    return JSON.stringify({
-      applications,
-    });
+    return JSON.stringify(
+      {
+        applications,
+      },
+      undefined,
+      '  '
+    );
   }
 
   scanPackages() {
@@ -79,7 +83,7 @@ class ManifestGenerator {
       if (path.sep === '\\') {
         relativePath = relativePath.split(path.sep).join('/');
       }
-
+      // FIXME: packageName 需要去除 tag 否则 update 的时候无法处理带有 tag 的 packageName
       const applicationInfo = {
         name: packageName,
         dir: relativePath,
