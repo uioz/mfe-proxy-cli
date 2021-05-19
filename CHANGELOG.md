@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/uioz/mfe-proxy-cli/compare/v1.1.0...v1.2.0) (2021-05-19)
+
+
+### Features
+
+* server-install command support ([9aaa62b](https://github.com/uioz/mfe-proxy-cli/commit/9aaa62be7f8c4eef8f84a856b28936697218a6e4))
+
 ## [1.1.0](https://github.com/uioz/mfe-proxy-cli/compare/v1.0.1...v1.1.0) (2021-05-19)
 
 
