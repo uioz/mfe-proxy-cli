@@ -61,6 +61,6 @@ eg. [@vue/cli]<http://localhost:8080>`,
     '-M, --mode <mode>',
     'development or production (prooduction by default)'
   )
-  .action(require('../src/create-command'));
+  .action(require('../src/create'));
 
 program.program.parse(process.argv);

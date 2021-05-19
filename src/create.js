@@ -10,8 +10,12 @@ const {
   DEFAULT_OUTPUT_DIR,
   DEFAULT_STATIC_DIR,
 } = require('./common');
-const { Installer, ServerInstaller } = require('./npm-wrapper');
-const { readPackageJson, writePackageJson, initPackage } = require('./package');
+const { Installer, ServerInstaller } = require('./lib/npm-wrapper');
+const {
+  readPackageJson,
+  writePackageJson,
+  initPackage,
+} = require('./lib/package');
 
 function getMfeConfig(packagePath, packageName) {
   packagePath = path.join(packagePath, CONFIG_FILE_NAME);
