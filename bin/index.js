@@ -61,6 +61,25 @@ eg. [@vue/cli]<http://localhost:8080>`,
     '-M, --mode <mode>',
     'development or production (prooduction by default)'
   )
-  .action(require('../src/create-command'));
+  .action(require('../src/create'));
+
+program
+  .command('server-install')
+  .description(
+    `this command will install mfe-proxy-server and configures it with options`
+  )
+  .option(
+    '-S, --serve',
+    'immediately serving this project use mfe-proxy-server after installed',
+    false
+  )
+  .option('-i, --inject', 'to inject serve command in packageJson', false)
+  .option('-P, --port <port>', 'mfe-proxy-server port (80 by default)')
+  .option('-H, --host <host>', 'mfe-proxy-server host (0.0.0.0 by default)')
+  .option(
+    '-M, --mode <mode>',
+    'development or production (production by default)'
+  )
+  .action(require('../src/server-install'));
 
 program.program.parse(process.argv);

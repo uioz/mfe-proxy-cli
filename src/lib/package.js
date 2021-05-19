@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 const { writeFile } = require('fs/promises');
 const execa = require('execa');
@@ -34,3 +36,19 @@ function writePackageJson(context, data) {
 }
 
 exports.writePackageJson = writePackageJson;
+
+function setupServeScript(packageJson) {
+  const command = {
+    serve: 'node ./mfe-server.js',
+  };
+
+  if (packageJson.scripts) {
+    Object.assign(packageJson.scripts, command);
+  } else {
+    packageJson.scripts = command;
+  }
+
+  return packageJson;
+}
+
+exports.setupServeScript = setupServeScript;

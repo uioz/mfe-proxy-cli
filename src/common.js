@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = {
   MANIFEST_FILE_NAME: 'mfe-manifest.json',
   CONFIG_FILE_NAME: 'mfe-config.js',

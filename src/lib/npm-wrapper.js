@@ -1,3 +1,5 @@
+'use strict';
+
 const execa = require('execa');
 
 class Installer {
@@ -40,8 +42,8 @@ class Installer {
 exports.Installer = Installer;
 
 class ServerInstaller extends Installer {
-  async download(env) {
-    await execa('npm', ['install', this.packageName, ...this.args], {
+  download(env) {
+    return execa('npm', ['install', this.packageName, ...this.args], {
       cwd: this.context,
       stdio: 'inherit',
       env,
