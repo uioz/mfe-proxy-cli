@@ -10,45 +10,8 @@ const {
   DEFAULT_OUTPUT_DIR,
   DEFAULT_STATIC_DIR,
 } = require('./common');
-
-class Downloader {
-  /**
-   *
-   * @param {string} packageName
-   * @param {string} registry
-   * @param {string} context
-   * @param {Array<string>} args
-   */
-  constructor(packageName, registry, context, args = []) {
-    this.packageName = packageName;
-    this.context = context;
-
-    const registryFlag = '--registry';
-
-    if (registry) {
-      // ['options1','--registry','from --to-npm options']
-      // -> ['options1','--registry','into specific registry in [packageName](registry)']
-      const index = args.indexOf(registryFlag);
-
-      if (index !== -1) {
-        args.splice(index, 0, registry);
-      } else {
-        args.push(registryFlag, registry);
-      }
-    }
-
-    this.args = args;
-  }
-
-  async download() {
-    await execa('npm', ['install', this.packageName, ...this.args], {
-      cwd: this.context,
-      stderr: process.stderr,
-      stdin: process.stdin,
-      stdout: process.stdout,
-    });
-  }
-}
+const { Installer, ServerInstaller } = require('./npm-wrapper');
+const { readPackageJson, writePackageJson, initPackage } = require('./package');
 
 function getMfeConfig(packagePath, packageName) {
   packagePath = path.join(packagePath, CONFIG_FILE_NAME);
@@ -174,15 +137,6 @@ function parsePackageName(packageNames) {
   });
 }
 
-async function makeDirAsPackage(context) {
-  await execa('npm', ['init', '-y'], {
-    cwd: context,
-    stderr: process.stderr,
-    stdin: process.stdin,
-    stdout: process.stdout,
-  });
-}
-
 /**
  * @param {string} folderName
  * @param {Array<string>} commands
@@ -197,19 +151,19 @@ module.exports = async function createCommandHandler(
 
   await mkdir(context);
 
-  await makeDirAsPackage(context);
+  await initPackage(context);
 
   const packageMeta = parsePackageName(commands);
 
   for (const { packageName, registry } of packageMeta) {
-    const downloader = new Downloader(
+    const installer = new Installer(
       packageName,
-      registry,
       context,
+      registry,
       options.toNpm
     );
 
-    await downloader.download();
+    await installer.download();
   }
 
   if (options.manifest) {
@@ -222,5 +176,44 @@ module.exports = async function createCommandHandler(
       packageMeta.map((item) => item.packageName),
       context
     ).generate();
+  }
+
+  if (options.serve) {
+    // add serve script to package.json
+    const packageJson = readPackageJson(context);
+    const command = {
+      serve: 'node ./mfe-server.js',
+    };
+
+    if (packageJson.scripts) {
+      Object.assign(packageJson.scripts, command);
+    } else {
+      packageJson.scripts = command;
+    }
+
+    writePackageJson(context, packageJson);
+
+    // install mfe-proxy-server and inject envs to it
+    const installer = new ServerInstaller('mfe-proxy-server', context);
+
+    const env = {};
+
+    if (options.port) {
+      env.MFE_SERVER_PORT = options.port;
+    }
+    if (options.host) {
+      env.MFE_SERVER_HOST = options.host;
+    }
+    if (options.mode) {
+      env.MFE_SERVER_MODE = options.mode;
+    }
+
+    await installer.download(env);
+
+    await execa('npm', ['run', 'serve'], {
+      cwd: context,
+      detached: true,
+      stdio: 'inherit',
+    });
   }
 };
