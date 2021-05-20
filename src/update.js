@@ -6,18 +6,33 @@ const CWD = process.cwd();
 
 /**
  *
- * @param {string} path
- * @returns {Array<string>}
+ * @param {Array<string>} packageNames
+ * @param {*} param1
+ * @returns
  */
-function getPackageNames(path) {
-  const manifest = require(path);
+function analyzePackage(packageNames, { applications }) {
+  const map = {};
 
-  return manifest.applications.map((info) => info.name);
+  for (const packageName of packageNames) {
+    const { registry } = applications.find((app) => app.name === packageName);
+
+    // registry could be a null
+    if (registry) {
+      if (map[registry]) {
+        map[registry].push(packageName);
+      } else {
+        map[registry] = [packageName];
+      }
+    }
+  }
+
+  return map;
 }
 
 module.exports = async function updateCommandHandler(commands, options) {
-  // TODO: 假设 packageNames 没有 tag
-  let packageNames = getPackageNames(path.join(CWD, options.manifest));
+  const manifest = require(path.join(CWD, options.manifest));
+
+  let packageNames = manifest.applications.map((info) => info.name);
 
   if (commands.length) {
     // 我们只处理那些存在于 manifest 文件中的 package
@@ -27,6 +42,13 @@ module.exports = async function updateCommandHandler(commands, options) {
     );
   }
 
-  // TODO: 需要在 create 的时候记录 registry 顺便支持类似 create 的特殊 registry 的语法
-  await updater(CWD, packageNames, options.toNpm);
+  const toNpm = options.toNpm ?? [];
+
+  if (packageNames.length) {
+    const registryMap = analyzePackage(packageNames, manifest);
+
+    for (const [registry, packageNames] of Object.entries(registryMap)) {
+      await updater(CWD, packageNames, toNpm.concat('--registry', registry));
+    }
+  }
 };
