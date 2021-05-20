@@ -14,18 +14,8 @@ class Installer {
     this.packageName = packageName;
     this.context = context;
 
-    const registryFlag = '--registry';
-
     if (registry) {
-      // ['options1','--registry','from --to-npm options']
-      // -> ['options1','--registry','into specific registry in [packageName](registry)']
-      const index = args.indexOf(registryFlag);
-
-      if (index !== -1) {
-        args.splice(index, 0, registry);
-      } else {
-        args.push(registryFlag, registry);
-      }
+      args.push('--registry', registry);
     }
 
     this.args = args;

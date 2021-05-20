@@ -4,6 +4,7 @@ const CWD = process.cwd();
 const path = require('path');
 const { writeFile, mkdir } = require('fs/promises');
 const resolvePkg = require('resolve-pkg');
+const ParsePackageName = require('parse-package-name');
 const {
   CONFIG_FILE_NAME,
   ROUTE_FILE_NAME,
@@ -40,10 +41,10 @@ function getMfeConfig(packagePath, packageName) {
 }
 
 class ManifestGenerator {
-  constructor(path, packageNames, context) {
+  constructor(path, packageMetas, context) {
     this.context = context;
     this.path = path;
-    this.packageNames = packageNames;
+    this.packageMetas = packageMetas;
     this.application = [];
   }
 
@@ -60,7 +61,7 @@ class ManifestGenerator {
   scanPackages() {
     const apps = [];
 
-    for (const packageName of this.packageNames) {
+    for (const { packageName, registry } of this.packageMetas) {
       const parsedPackageMeta = path.parse(
         resolvePkg(packageName, {
           cwd: this.context,
@@ -83,10 +84,11 @@ class ManifestGenerator {
       if (path.sep === '\\') {
         relativePath = relativePath.split(path.sep).join('/');
       }
-      // FIXME: packageName 需要去除 tag 否则 update 的时候无法处理带有 tag 的 packageName
+
       const applicationInfo = {
         name: packageName,
         dir: relativePath,
+        registry,
       };
 
       apps.push([mfeConfig, applicationInfo]);
@@ -136,15 +138,56 @@ function parsePackageName(packageNames) {
 
     if (result) {
       return {
-        packageName: result[1],
+        // ParsePackageName.name doesn't include version
+        packageName: ParsePackageName(result[1]).name,
         registry: result[2],
       };
     }
     return {
-      packageName: packageName,
+      packageName: ParsePackageName(packageName).name,
       registry: null,
     };
   });
+}
+
+/**
+ *
+ * @param {Array<string>} options
+ */
+function extractRegistryFromNpmOptions(options) {
+  const registryOption = '--registry';
+  const registryOptionE = /^--registry=(.+)/i;
+
+  let isEqualRegistryOption;
+  const index = options.findIndex((option) => {
+    if (option === registryOption) {
+      isEqualRegistryOption = true;
+      return true;
+    } else if (registryOptionE.test(option)) {
+      isEqualRegistryOption = false;
+      return true;
+    }
+  });
+
+  let registry;
+
+  if (isEqualRegistryOption === true) {
+    registry = options[index + 1];
+    // new URL will throw a error if registry isn't a valid URL
+    new URL(registry);
+    // remove
+    options.splice(index, 2);
+  } else if (isEqualRegistryOption === false) {
+    const result = options[index].match(registryOptionE);
+    registry = result[1];
+
+    // new URL will throw a error if registry isn't a valid URL
+    new URL(registry);
+    // remove
+    options.splice(index, 1);
+  }
+
+  return registry;
 }
 
 /**
@@ -163,9 +206,23 @@ module.exports = async function createCommandHandler(
 
   await initPackage(context);
 
-  const packageMeta = parsePackageName(commands);
+  let parsedPackageMetas = parsePackageName(commands);
 
-  for (const { packageName, registry } of packageMeta) {
+  // handle registry from command
+  if (options.toNpm?.length) {
+    const registry = extractRegistryFromNpmOptions(options.toNpm);
+
+    if (registry) {
+      parsedPackageMetas = parsedPackageMetas.map((item) => {
+        if (item.registry === null) {
+          item.registry = registry;
+        }
+        return item;
+      });
+    }
+  }
+
+  for (const { packageName, registry } of parsedPackageMetas) {
     const installer = new Installer(
       packageName,
       context,
@@ -183,7 +240,7 @@ module.exports = async function createCommandHandler(
 
     await new ManifestGenerator(
       manifestPath,
-      packageMeta.map((item) => item.packageName),
+      parsedPackageMetas,
       context
     ).generate();
   }
