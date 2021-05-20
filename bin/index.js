@@ -82,4 +82,17 @@ program
   )
   .action(require('../src/server-install'));
 
+program
+  .command('update [<pkg>...]')
+  .description(
+    `this command will only update the "mfe" package which has a "mfe-config.js" in its project folder`
+  )
+  .option(
+    '-m, --manifest <manifest>',
+    'to specify a manifest file',
+    MANIFEST_FILE_NAME
+  )
+  .option('-n, --to-npm <anyoption...>')
+  .action(require('../src/update'));
+
 program.program.parse(process.argv);

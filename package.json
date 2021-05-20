@@ -41,6 +41,7 @@
   "dependencies": {
     "commander": "^7.2.0",
     "execa": "^5.0.0",
+    "parse-package-name": "^0.1.0",
     "resolve-pkg": "^2.0.0"
   }
 }

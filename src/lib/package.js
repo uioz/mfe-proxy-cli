@@ -4,8 +4,8 @@ const path = require('path');
 const { writeFile } = require('fs/promises');
 const execa = require('execa');
 
-async function initPackage(context) {
-  await execa('npm', ['init', '-y'], {
+function initPackage(context) {
+  return execa('npm', ['init', '-y'], {
     cwd: context,
     stdio: 'inherit',
   });
